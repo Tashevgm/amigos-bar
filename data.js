@@ -235,3 +235,215 @@ window.AmigosStore = {
   saveReservations: (reservations) => writeStoredData(AMIGOS_STORAGE_KEYS.reservations, reservations),
   uid: (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
 };
+
+const createSupabaseClient = () => {
+  const config = window.AMIGOS_SUPABASE;
+
+  if (!config?.url || !config?.anonKey || !window.supabase) {
+    return null;
+  }
+
+  return window.supabase.createClient(config.url, config.anonKey);
+};
+
+const supabaseClient = createSupabaseClient();
+
+const mapMenuRows = (categories, items) =>
+  categories.map((category) => ({
+    id: category.id,
+    title: category.title,
+    type: category.type,
+    color: category.color,
+    items: items
+      .filter((item) => item.category_id === category.id)
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        size: item.size || "",
+        price: Number(item.price).toFixed(2),
+        isAvailable: item.is_available,
+      })),
+  }));
+
+window.AmigosDb = {
+  client: supabaseClient,
+  isEnabled: Boolean(supabaseClient),
+
+  async getMenu() {
+    if (!supabaseClient) return window.AmigosStore.getMenu();
+
+    const [{ data: categories, error: categoriesError }, { data: items, error: itemsError }] = await Promise.all([
+      supabaseClient.from("menu_categories").select("*").order("sort_order").order("title"),
+      supabaseClient.from("menu_items").select("*").eq("is_available", true).order("sort_order").order("name"),
+    ]);
+
+    if (categoriesError || itemsError || !categories?.length) {
+      return window.AmigosStore.getMenu();
+    }
+
+    return mapMenuRows(categories, items || []);
+  },
+
+  async getEvents() {
+    if (!supabaseClient) return window.AmigosStore.getEvents();
+
+    const { data, error } = await supabaseClient
+      .from("events")
+      .select("*")
+      .eq("is_public", true)
+      .order("event_date");
+
+    if (error || !data?.length) {
+      return window.AmigosStore.getEvents();
+    }
+
+    return data.map((event) => ({
+      id: event.id,
+      date: event.event_date,
+      title: event.title,
+      label: event.label || "",
+      description: event.description || "",
+    }));
+  },
+
+  async getReservations() {
+    if (!supabaseClient) return window.AmigosStore.getReservations();
+
+    const { data, error } = await supabaseClient
+      .from("reservations")
+      .select("*")
+      .order("reservation_date")
+      .order("reservation_time");
+
+    if (error || !data) {
+      return window.AmigosStore.getReservations();
+    }
+
+    return data.map((reservation) => ({
+      id: reservation.id,
+      date: reservation.reservation_date,
+      time: reservation.reservation_time?.slice(0, 5) || "",
+      name: reservation.guest_name,
+      guests: String(reservation.guests),
+      phone: reservation.phone || "",
+      note: reservation.note || "",
+      status: reservation.status,
+    }));
+  },
+
+  async createReservation(reservation) {
+    if (!supabaseClient) {
+      const reservations = window.AmigosStore.getReservations();
+      reservations.push({ ...reservation, id: window.AmigosStore.uid("reservation"), status: "pending" });
+      window.AmigosStore.saveReservations(reservations);
+      return;
+    }
+
+    const { error } = await supabaseClient.from("reservations").insert({
+      reservation_date: reservation.date,
+      reservation_time: reservation.time || "20:00",
+      guest_name: reservation.name,
+      guests: Number(reservation.guests || 1),
+      phone: reservation.phone || reservation.contact || "",
+      note: reservation.note || reservation.message || "",
+      status: "pending",
+    });
+
+    if (error) throw error;
+  },
+
+  async saveMenu(menu) {
+    if (!supabaseClient) {
+      window.AmigosStore.saveMenu(menu);
+      return;
+    }
+
+    const { error: deleteError } = await supabaseClient
+      .from("menu_categories")
+      .delete()
+      .neq("id", "00000000-0000-0000-0000-000000000000");
+
+    if (deleteError) throw deleteError;
+
+    for (const [categoryIndex, category] of menu.entries()) {
+      const { data: insertedCategory, error: categoryError } = await supabaseClient
+        .from("menu_categories")
+        .insert({
+          title: category.title,
+          type: category.type,
+          color: category.color,
+          sort_order: categoryIndex,
+        })
+        .select("id")
+        .single();
+
+      if (categoryError) throw categoryError;
+
+      const items = category.items.map((item, itemIndex) => ({
+        category_id: insertedCategory.id,
+        name: item.name,
+        size: item.size || null,
+        price: Number(item.price || 0),
+        sort_order: itemIndex,
+        is_available: item.isAvailable !== false,
+      }));
+
+      if (items.length) {
+        const { error: itemsError } = await supabaseClient.from("menu_items").insert(items);
+        if (itemsError) throw itemsError;
+      }
+    }
+  },
+
+  async upsertEvent(event) {
+    if (!supabaseClient) return;
+
+    const payload = {
+      event_date: event.date,
+      title: event.title,
+      label: event.label || null,
+      description: event.description || null,
+      is_public: true,
+    };
+
+    if (event.id && !String(event.id).startsWith("event-")) {
+      payload.id = event.id;
+    }
+
+    const { error } = await supabaseClient.from("events").upsert(payload);
+    if (error) throw error;
+  },
+
+  async deleteEvent(id) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.from("events").delete().eq("id", id);
+    if (error) throw error;
+  },
+
+  async upsertReservation(reservation) {
+    if (!supabaseClient) return;
+
+    const payload = {
+      reservation_date: reservation.date,
+      reservation_time: reservation.time,
+      guest_name: reservation.name,
+      guests: Number(reservation.guests || 1),
+      phone: reservation.phone || null,
+      note: reservation.note || null,
+      status: reservation.status || "confirmed",
+    };
+
+    if (reservation.id && !String(reservation.id).startsWith("reservation-")) {
+      payload.id = reservation.id;
+    }
+
+    const { error } = await supabaseClient.from("reservations").upsert(payload);
+    if (error) throw error;
+  },
+
+  async deleteReservation(id) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.from("reservations").delete().eq("id", id);
+    if (error) throw error;
+  },
+};

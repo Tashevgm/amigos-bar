@@ -32,10 +32,15 @@ const dayNames = ["Пон", "Вто", "Сря", "Чет", "Пет", "Съб", "�
 const formatMonthTitle = (date) =>
   new Intl.DateTimeFormat("bg-BG", { month: "long", year: "numeric" }).format(date).replace(/^./, (letter) => letter.toUpperCase());
 
-const renderPublicMenu = () => {
-  if (!publicMenu || !window.AmigosStore) return;
+const parseGuests = (value) => {
+  const match = String(value || "").match(/\d+/);
+  return match ? Number(match[0]) : 1;
+};
 
-  const menu = window.AmigosStore.getMenu();
+const renderPublicMenu = async () => {
+  if (!publicMenu || !window.AmigosDb) return;
+
+  const menu = await window.AmigosDb.getMenu();
 
   publicMenu.innerHTML = menu
     .map(
@@ -62,10 +67,10 @@ const renderPublicMenu = () => {
   menuCategories = document.querySelectorAll("[data-menu-category]");
 };
 
-const renderPublicEventsCalendar = () => {
-  if (!publicEventsCalendar || !window.AmigosStore) return;
+const renderPublicEventsCalendar = async () => {
+  if (!publicEventsCalendar || !window.AmigosDb) return;
 
-  const events = window.AmigosStore.getEvents().sort((a, b) => a.date.localeCompare(b.date));
+  const events = (await window.AmigosDb.getEvents()).sort((a, b) => a.date.localeCompare(b.date));
   const baseDate = events[0]?.date ? new Date(`${events[0].date}T12:00:00`) : new Date();
   const year = baseDate.getFullYear();
   const month = baseDate.getMonth();
@@ -120,20 +125,27 @@ const selectEvent = (eventName) => {
   eventSelect.value = matchingOption.value;
 };
 
-renderPublicMenu();
-renderPublicEventsCalendar();
-updateHeader();
-window.addEventListener("scroll", updateHeader, { passive: true });
-
-eventTiles.forEach((tile) => {
-  tile.addEventListener("click", () => {
-    selectEvent(tile.dataset.event);
-    if (bookingDate) {
-      bookingDate.value = tile.dataset.date || "";
-    }
-    document.querySelector("#booking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+const attachEventTileHandlers = () => {
+  eventTiles.forEach((tile) => {
+    tile.addEventListener("click", () => {
+      selectEvent(tile.dataset.event);
+      if (bookingDate) {
+        bookingDate.value = tile.dataset.date || "";
+      }
+      document.querySelector("#booking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   });
-});
+};
+
+const initPublicPages = async () => {
+  await renderPublicMenu();
+  await renderPublicEventsCalendar();
+  attachEventTileHandlers();
+  updateHeader();
+  window.addEventListener("scroll", updateHeader, { passive: true });
+};
+
+initPublicPages();
 
 menuFilterButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -158,21 +170,36 @@ menuFilterButtons.forEach((button) => {
   });
 });
 
-bookingForm?.addEventListener("submit", (event) => {
+bookingForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const button = bookingForm.querySelector("button");
   const formData = new FormData(bookingForm);
   const eventName = formData.get("event") || "вашата резервация";
 
-  button.textContent = "Заявката е изпратена";
   button.disabled = true;
-  formStatus.textContent = `Благодарим. Заявката за "${eventName}" е записана.`;
+
+  try {
+    await window.AmigosDb.createReservation({
+      date: formData.get("date"),
+      time: "20:00",
+      name: formData.get("name"),
+      guests: parseGuests(formData.get("party")),
+      contact: formData.get("contact"),
+      message: `${eventName}${formData.get("message") ? ` - ${formData.get("message")}` : ""}`,
+    });
+
+    button.textContent = "Заявката е изпратена";
+    formStatus.textContent = `Благодарим. Заявката за "${eventName}" е записана.`;
+    bookingForm.reset();
+  } catch (error) {
+    formStatus.textContent = "Има проблем със записването. Опитайте отново.";
+    console.error(error);
+  }
 
   window.setTimeout(() => {
     button.textContent = "Изпрати заявка";
     button.disabled = false;
     formStatus.textContent = "";
-    bookingForm.reset();
   }, 2800);
 });

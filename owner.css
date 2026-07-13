@@ -236,6 +236,14 @@ p {
   padding: 22px;
 }
 
+.is-hidden {
+  display: none !important;
+}
+
+.auth-card {
+  border-color: rgba(217, 90, 69, 0.35);
+}
+
 .owner-card.large {
   min-height: 340px;
 }

@@ -1,4 +1,5 @@
-const store = window.AmigosStore;
+const localStore = window.AmigosStore;
+const store = window.AmigosDb;
 const currentDate = document.querySelector("[data-current-date]");
 const menuEditor = document.querySelector("[data-menu-editor]");
 const eventForm = document.querySelector("[data-event-form]");
@@ -13,11 +14,20 @@ const reservationsCount = document.querySelector("[data-reservations-count]");
 const copyButton = document.querySelector("[data-copy-menu-link]");
 const menuLinkInput = document.querySelector("[data-menu-link]");
 const copyStatus = document.querySelector("[data-copy-status]");
+const authPanel = document.querySelector("[data-auth-panel]");
+const loginForm = document.querySelector("[data-login-form]");
+const logoutButton = document.querySelector("[data-logout]");
+const authStatus = document.querySelector("[data-auth-status]");
 
 const monthState = {
   events: new Date(2026, 6, 1),
   reservations: new Date(2026, 6, 1),
 };
+
+let menuState = [];
+let eventsState = [];
+let reservationsState = [];
+let menuSaveTimer;
 
 const typeLabels = {
   food: "Храна",
@@ -51,17 +61,13 @@ const formatMonth = (date) =>
 const getDateKey = (year, month, day) => `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
 const renderStats = () => {
-  const menu = store.getMenu();
-  const events = store.getEvents();
-  const reservations = store.getReservations();
-
-  menuCount.textContent = menu.reduce((total, category) => total + category.items.length, 0);
-  eventsCount.textContent = events.length;
-  reservationsCount.textContent = reservations.length;
+  menuCount.textContent = menuState.reduce((total, category) => total + category.items.length, 0);
+  eventsCount.textContent = eventsState.length;
+  reservationsCount.textContent = reservationsState.length;
 };
 
 const renderMenuEditor = () => {
-  const menu = store.getMenu();
+  const menu = menuState;
 
   menuEditor.innerHTML = menu
     .map(
@@ -136,7 +142,7 @@ const renderCalendar = ({ target, labelTarget, stateKey, items, itemType }) => {
 };
 
 const renderEvents = () => {
-  const events = store.getEvents().sort((a, b) => a.date.localeCompare(b.date));
+  const events = [...eventsState].sort((a, b) => a.date.localeCompare(b.date));
 
   renderCalendar({
     target: eventsCalendar,
@@ -163,7 +169,7 @@ const renderEvents = () => {
 };
 
 const renderReservations = () => {
-  const reservations = store.getReservations().sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
+  const reservations = [...reservationsState].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
 
   renderCalendar({
     target: reservationsCalendar,
@@ -196,6 +202,32 @@ const renderAll = () => {
   renderReservations();
 };
 
+const setAuthUi = async () => {
+  if (!store.client) return;
+
+  const { data } = await store.client.auth.getSession();
+  const isLoggedIn = Boolean(data.session);
+
+  loginForm.classList.toggle("is-hidden", isLoggedIn);
+  logoutButton.classList.toggle("is-hidden", !isLoggedIn);
+  authStatus.textContent = isLoggedIn
+    ? "Влязъл си. Промените се записват в Supabase."
+    : "Влез с потребител от Supabase Auth, за да редактираш базата.";
+};
+
+const saveMenuSoon = () => {
+  window.clearTimeout(menuSaveTimer);
+  menuSaveTimer = window.setTimeout(async () => {
+    try {
+      await store.saveMenu(menuState);
+      authStatus.textContent = "Менюто е записано в Supabase.";
+    } catch (error) {
+      authStatus.textContent = "Менюто не е записано. Провери дали си влязъл в портала.";
+      console.error(error);
+    }
+  }, 900);
+};
+
 const shiftMonth = (key, amount) => {
   monthState[key] = new Date(monthState[key].getFullYear(), monthState[key].getMonth() + amount, 1);
   key === "events" ? renderEvents() : renderReservations();
@@ -215,10 +247,18 @@ currentDate.textContent = new Intl.DateTimeFormat("bg-BG", {
   year: "numeric",
 }).format(new Date());
 
-renderAll();
+const loadOwnerData = async () => {
+  await setAuthUi();
+  menuState = await store.getMenu();
+  eventsState = await store.getEvents();
+  reservationsState = await store.getReservations();
+  renderAll();
+};
+
+loadOwnerData();
 
 const handleMenuEditorChange = (event) => {
-  const menu = store.getMenu();
+  const menu = menuState;
   const categoryElement = event.target.closest("[data-category-index]");
   const itemElement = event.target.closest("[data-item-index]");
 
@@ -237,15 +277,16 @@ const handleMenuEditorChange = (event) => {
     menu[categoryIndex].items[itemIndex][itemField] = event.target.value;
   }
 
-  store.saveMenu(menu);
+  localStore.saveMenu(menu);
+  saveMenuSoon();
   renderStats();
 };
 
 menuEditor.addEventListener("input", handleMenuEditorChange);
 menuEditor.addEventListener("change", handleMenuEditorChange);
 
-menuEditor.addEventListener("click", (event) => {
-  const menu = store.getMenu();
+menuEditor.addEventListener("click", async (event) => {
+  const menu = menuState;
   const addItem = event.target.dataset.addItem;
   const deleteItem = event.target.dataset.deleteItem;
   const deleteCategory = event.target.dataset.deleteCategory;
@@ -263,35 +304,54 @@ menuEditor.addEventListener("click", (event) => {
     menu.splice(Number(deleteCategory), 1);
   }
 
-  store.saveMenu(menu);
+  localStore.saveMenu(menu);
+  try {
+    await store.saveMenu(menu);
+  } catch (error) {
+    authStatus.textContent = "Промяната не е записана. Провери дали си влязъл.";
+    console.error(error);
+  }
   renderMenuEditor();
   renderStats();
 });
 
-document.querySelector("[data-add-category]").addEventListener("click", () => {
-  const menu = store.getMenu();
+document.querySelector("[data-add-category]").addEventListener("click", async () => {
+  const menu = menuState;
   menu.push({
-    id: store.uid("category"),
+    id: localStore.uid("category"),
     title: "Нова категория",
     type: "food",
     color: "green",
     items: [{ name: "Нова позиция", size: "300г", price: "0.00" }],
   });
-  store.saveMenu(menu);
+  localStore.saveMenu(menu);
+  try {
+    await store.saveMenu(menu);
+  } catch (error) {
+    authStatus.textContent = "Категорията не е записана. Провери дали си влязъл.";
+    console.error(error);
+  }
   renderAll();
 });
 
-document.querySelector("[data-reset-menu]").addEventListener("click", () => {
-  store.resetMenu();
+document.querySelector("[data-reset-menu]").addEventListener("click", async () => {
+  localStore.resetMenu();
+  menuState = localStore.getMenu();
+  try {
+    await store.saveMenu(menuState);
+  } catch (error) {
+    authStatus.textContent = "Менюто не е записано. Провери дали си влязъл.";
+    console.error(error);
+  }
   renderAll();
 });
 
-eventForm.addEventListener("submit", (event) => {
+eventForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(eventForm);
-  const events = store.getEvents();
+  const events = eventsState;
   const payload = {
-    id: formData.get("id") || store.uid("event"),
+    id: formData.get("id") || localStore.uid("event"),
     date: formData.get("date"),
     title: formData.get("title"),
     label: formData.get("label"),
@@ -305,18 +365,25 @@ eventForm.addEventListener("submit", (event) => {
     events.push(payload);
   }
 
-  store.saveEvents(events);
+  localStore.saveEvents(events);
+  try {
+    await store.upsertEvent(payload);
+    eventsState = await store.getEvents();
+  } catch (error) {
+    authStatus.textContent = "Event-ът не е записан. Провери дали си влязъл.";
+    console.error(error);
+  }
   eventForm.reset();
   renderEvents();
   renderStats();
 });
 
-reservationForm.addEventListener("submit", (event) => {
+reservationForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(reservationForm);
-  const reservations = store.getReservations();
+  const reservations = reservationsState;
   const payload = {
-    id: formData.get("id") || store.uid("reservation"),
+    id: formData.get("id") || localStore.uid("reservation"),
     date: formData.get("date"),
     time: formData.get("time"),
     name: formData.get("name"),
@@ -333,16 +400,23 @@ reservationForm.addEventListener("submit", (event) => {
     reservations.push(payload);
   }
 
-  store.saveReservations(reservations);
+  localStore.saveReservations(reservations);
+  try {
+    await store.upsertReservation(payload);
+    reservationsState = await store.getReservations();
+  } catch (error) {
+    authStatus.textContent = "Резервацията не е записана. Провери дали си влязъл.";
+    console.error(error);
+  }
   reservationForm.reset();
   renderReservations();
   renderStats();
 });
 
-eventsList.addEventListener("click", (event) => {
+eventsList.addEventListener("click", async (event) => {
   const editId = event.target.dataset.editEvent;
   const deleteId = event.target.dataset.deleteEvent;
-  const events = store.getEvents();
+  const events = eventsState;
 
   if (editId) {
     const selected = events.find((item) => item.id === editId);
@@ -350,16 +424,23 @@ eventsList.addEventListener("click", (event) => {
   }
 
   if (deleteId) {
-    store.saveEvents(events.filter((item) => item.id !== deleteId));
+    eventsState = events.filter((item) => item.id !== deleteId);
+    localStore.saveEvents(eventsState);
+    try {
+      await store.deleteEvent(deleteId);
+    } catch (error) {
+      authStatus.textContent = "Event-ът не е изтрит. Провери дали си влязъл.";
+      console.error(error);
+    }
     renderEvents();
     renderStats();
   }
 });
 
-reservationsList.addEventListener("click", (event) => {
+reservationsList.addEventListener("click", async (event) => {
   const editId = event.target.dataset.editReservation;
   const deleteId = event.target.dataset.deleteReservation;
-  const reservations = store.getReservations();
+  const reservations = reservationsState;
 
   if (editId) {
     const selected = reservations.find((item) => item.id === editId);
@@ -367,7 +448,14 @@ reservationsList.addEventListener("click", (event) => {
   }
 
   if (deleteId) {
-    store.saveReservations(reservations.filter((item) => item.id !== deleteId));
+    reservationsState = reservations.filter((item) => item.id !== deleteId);
+    localStore.saveReservations(reservationsState);
+    try {
+      await store.deleteReservation(deleteId);
+    } catch (error) {
+      authStatus.textContent = "Резервацията не е изтрита. Провери дали си влязъл.";
+      console.error(error);
+    }
     renderReservations();
     renderStats();
   }
@@ -395,4 +483,29 @@ copyButton.addEventListener("click", async () => {
   } catch {
     copyStatus.textContent = "Маркирай и копирай линка ръчно.";
   }
+});
+
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(loginForm);
+
+  try {
+    const { error } = await store.client.auth.signInWithPassword({
+      email: formData.get("email"),
+      password: formData.get("password"),
+    });
+
+    if (error) throw error;
+
+    loginForm.reset();
+    await loadOwnerData();
+  } catch (error) {
+    authStatus.textContent = "Неуспешен вход. Провери email/password.";
+    console.error(error);
+  }
+});
+
+logoutButton.addEventListener("click", async () => {
+  await store.client.auth.signOut();
+  await loadOwnerData();
 });
