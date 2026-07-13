@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="bg">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Меню | Amigos Beach Bar</title>
+    <meta
+      name="description"
+      content="Меню на Amigos Beach Bar - храна, коктейли, бири, твърд алкохол, безалкохолни напитки, лимонади и десерти."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700;800&family=Permanent+Marker&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header" data-header>
+      <a class="brand" href="index.html" aria-label="Начало на Amigos Beach Bar">
+        <img class="brand-logo" src="assets/Amigos_Logo.png" alt="" />
+        <span>Amigos</span>
+      </a>
+      <nav class="site-nav" aria-label="Основна навигация">
+        <a href="index.html#events">Събития</a>
+        <a href="index.html#booking">Резервация</a>
+        <a href="menu.html">Меню</a>
+        <a href="index.html#visit">Локация</a>
+      </nav>
+      <a class="header-action" href="index.html#booking">Запази място</a>
+    </header>
+
+    <main class="menu-page-main">
+      <section class="section menu-section" id="menu" aria-labelledby="menu-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Amigos Beach Bar</p>
+            <h1 id="menu-title">Меню</h1>
+            <p class="qr-menu-intro">Храна, коктейли, бири, твърд алкохол, домашни лимонади, фрешове и десерти.</p>
+          </div>
+          <p class="menu-note">Цените са в евро. Менюто е без снимки.</p>
+        </div>
+
+        <div class="menu-browser" aria-label="Филтри за менюто">
+          <div class="menu-tabs" role="tablist" aria-label="Категории в менюто">
+            <button class="is-active" type="button" data-menu-filter="all" aria-pressed="true">Всичко</button>
+            <button type="button" data-menu-filter="food" aria-pressed="false">Храна</button>
+            <button type="button" data-menu-filter="cocktails" aria-pressed="false">Коктейли</button>
+            <button type="button" data-menu-filter="soft" aria-pressed="false">Безалкохолни</button>
+            <button type="button" data-menu-filter="beer" aria-pressed="false">Бири</button>
+            <button type="button" data-menu-filter="spirits" aria-pressed="false">Алкохол</button>
+            <button type="button" data-menu-filter="desserts" aria-pressed="false">Десерти</button>
+          </div>
+          <p class="menu-filter-status" data-menu-status>Показани са всички категории.</p>
+        </div>
+
+        <div class="menu-board" data-public-menu>
+          <article class="menu-category green" data-menu-category="food">
+            <h3>Салати</h3>
+            <ul>
+              <li><span>Цезар с пиле <small>300г</small></span><strong>8.50</strong></li>
+              <li><span>Капрезе <small>250г</small></span><strong>7.50</strong></li>
+              <li><span>Шопска салата <small>250г</small></span><strong>6.00</strong></li>
+              <li><span>Зелена салата с риба тон <small>300г</small></span><strong>8.00</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category pink" data-menu-category="food">
+            <h3>Предястия</h3>
+            <ul>
+              <li><span>Пържени картофи <small>300г</small></span><strong>3.90</strong></li>
+              <li><span>Пържени картофи със сирене <small>300г</small></span><strong>4.50</strong></li>
+              <li><span>Сладки картофи <small>250г</small></span><strong>5.90</strong></li>
+              <li><span>Начос с чедър <small>250г</small></span><strong>6.90</strong></li>
+              <li><span>Пилешки хапки <small>300г</small></span><strong>7.50</strong></li>
+              <li><span>Пилешки крилца <small>300г</small></span><strong>7.50</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category blue" data-menu-category="food">
+            <h3>Морски специалитети</h3>
+            <ul>
+              <li><span>Цаца <small>250г</small></span><strong>3.90</strong></li>
+              <li><span>Калмари <small>300г</small></span><strong>10.99</strong></li>
+              <li><span>Сафрид <small>250г</small></span><strong>5.90</strong></li>
+              <li><span>Скариди <small>200г</small></span><strong>9.90</strong></li>
+              <li><span>Миди с черупка <small>800г</small></span><strong>9.90</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category orange" data-menu-category="food">
+            <h3>Основни / Street Food</h3>
+            <ul>
+              <li><span>Smash Burger <small>350г</small></span><strong>9.90</strong></li>
+              <li><span>Кесадия <small>350г</small></span><strong>9.90</strong></li>
+              <li><span>Бурито <small>400г</small></span><strong>9.90</strong></li>
+              <li><span>Хот-дог <small>220г</small></span><strong>4.90</strong></li>
+              <li><span>Кубински сандвич <small>350г</small></span><strong>7.90</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category pink" data-menu-category="cocktails">
+            <h3>Коктейли</h3>
+            <ul>
+              <li><span>Мохито</span><strong>7.00</strong></li>
+              <li><span>Ягодово мохито</span><strong>7.50</strong></li>
+              <li><span>Аперол Шприц</span><strong>8.00</strong></li>
+              <li><span>Джин с тоник</span><strong>7.00</strong></li>
+              <li><span>Куба Либре</span><strong>6.80</strong></li>
+              <li><span>Секс на плажа</span><strong>7.50</strong></li>
+              <li><span>Amigos Tropical</span><strong>8.00</strong></li>
+              <li><span>Ягодово дайкири</span><strong>7.50</strong></li>
+              <li><span>Пина Колада</span><strong>8.00</strong></li>
+              <li><span>Маргарита</span><strong>8.00</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category green" data-menu-category="soft">
+            <h3>Домашни лимонади</h3>
+            <ul>
+              <li><span>Пъпеш <small>400мл</small></span><strong>3.50</strong></li>
+              <li><span>Драконов плод <small>400мл</small></span><strong>3.50</strong></li>
+              <li><span>Бъз <small>400мл</small></span><strong>3.50</strong></li>
+              <li><span>Маракуя <small>400мл</small></span><strong>3.50</strong></li>
+              <li><span>Малина <small>400мл</small></span><strong>3.50</strong></li>
+              <li><span>Ягода <small>400мл</small></span><strong>3.50</strong></li>
+              <li><span>Киви <small>400мл</small></span><strong>3.50</strong></li>
+              <li><span>Гуава <small>400мл</small></span><strong>3.50</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category orange" data-menu-category="soft">
+            <h3>Фрешове и шейкове</h3>
+            <ul>
+              <li><span>Портокал <small>250мл</small></span><strong>4.00</strong></li>
+              <li><span>Грейпфрут <small>250мл</small></span><strong>4.00</strong></li>
+              <li><span>Морков и ябълка <small>250мл</small></span><strong>4.00</strong></li>
+              <li><span>Бананов шейк</span><strong>4.00</strong></li>
+              <li><span>Шоколадов шейк</span><strong>4.00</strong></li>
+              <li><span>Ягодов шейк</span><strong>4.00</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category blue" data-menu-category="beer">
+            <h3>Бири</h3>
+            <ul>
+              <li><span>Шуменско малка <small>330мл</small></span><strong>3.00</strong></li>
+              <li><span>Шуменско голяма <small>500мл</small></span><strong>4.00</strong></li>
+              <li><span>Карлсберг малка <small>330мл</small></span><strong>3.60</strong></li>
+              <li><span>Карлсберг голяма <small>500мл</small></span><strong>4.60</strong></li>
+              <li><span>Карлсберг 0% <small>330мл</small></span><strong>3.20</strong></li>
+              <li><span>Бъдвайзер <small>300мл</small></span><strong>3.60</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category pink" data-menu-category="soft">
+            <h3>Кафе и топли напитки</h3>
+            <ul>
+              <li><span>Червен Ричард</span><strong>2.40</strong></li>
+              <li><span>Черна Перла</span><strong>2.70</strong></li>
+              <li><span>Ричард Лешник</span><strong>2.70</strong></li>
+              <li><span>Безкофеиново</span><strong>2.70</strong></li>
+              <li><span>Капучино</span><strong>3.50</strong></li>
+              <li><span>Лате</span><strong>3.50</strong></li>
+              <li><span>Фрапе</span><strong>3.50</strong></li>
+              <li><span>Айс кафе</span><strong>3.50</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category blue" data-menu-category="soft">
+            <h3>Безалкохолни напитки</h3>
+            <ul>
+              <li><span>Pepsi / Pepsi Max / Pepsi Twist</span><strong>2.80</strong></li>
+              <li><span>Mirinda / 7UP <small>330мл</small></span><strong>2.80</strong></li>
+              <li><span>Everest Tonic <small>250мл</small></span><strong>2.80</strong></li>
+              <li><span>Lipton Lemon / Peach <small>500мл</small></span><strong>3.00</strong></li>
+              <li><span>Prisan сок <small>250мл</small></span><strong>3.20</strong></li>
+              <li><span>Red Bull <small>250мл</small></span><strong>3.20</strong></li>
+              <li><span>Вода <small>0.5л</small></span><strong>2.00</strong></li>
+              <li><span>Газирана вода <small>500мл</small></span><strong>2.40</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category black" data-menu-category="spirits">
+            <h3>Твърд алкохол</h3>
+            <ul>
+              <li><span>Smirnoff водка <small>50мл</small></span><strong>3.00</strong></li>
+              <li><span>Finlandia водка <small>50мл</small></span><strong>3.60</strong></li>
+              <li><span>Gordon's джин <small>50мл</small></span><strong>4.00</strong></li>
+              <li><span>Gordon's Pink джин <small>50мл</small></span><strong>4.20</strong></li>
+              <li><span>Havana Club 3Y ром <small>50мл</small></span><strong>5.20</strong></li>
+              <li><span>Sierra текила <small>50мл</small></span><strong>4.50</strong></li>
+              <li><span>Olmeca Blanco <small>50мл</small></span><strong>4.00</strong></li>
+              <li><span>Узо <small>50мл</small></span><strong>4.00</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category pink" data-menu-category="desserts">
+            <h3>Десерти</h3>
+            <ul>
+              <li><span>Тарт с шоколад и солен карамел <small>150г</small></span><strong>6.00</strong></li>
+              <li><span>Десерт с бадемов блат, ванилов скир, горски плодове и ядки <small>150г</small></span><strong>6.00</strong></li>
+              <li><span>Хрупкав двоен шоколадов мус <small>150г</small></span><strong>6.00</strong></li>
+              <li><span>Малиново брауни <small>150г</small></span><strong>6.00</strong></li>
+              <li><span>Американски чийзкейк <small>150г</small></span><strong>6.00</strong></li>
+            </ul>
+          </article>
+
+          <article class="menu-category green" data-menu-category="desserts">
+            <h3>Плодове</h3>
+            <ul>
+              <li><span>Тропик <small>диня, ананас, грозде</small></span><strong>12.50</strong></li>
+              <li><span>Лято <small>диня, пъпеш, ягода</small></span><strong>12.90</strong></li>
+              <li><span>Цветен контраст <small>ананас, киви, ягода</small></span><strong>13.50</strong></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Amigos Beach Bar</span>
+      <span>Меню</span>
+    </footer>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

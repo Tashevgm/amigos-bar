@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="bg">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Owner Portal | Amigos Beach Bar</title>
+    <meta name="description" content="Портал за собственик на Amigos Beach Bar." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="owner.css" />
+  </head>
+  <body>
+    <main class="owner-shell">
+      <aside class="owner-sidebar">
+        <a class="owner-brand" href="index.html">
+          <img src="assets/Amigos_Logo.png" alt="" />
+          <span>Amigos</span>
+        </a>
+        <nav class="owner-nav" aria-label="Owner portal navigation">
+          <a href="#overview" class="is-active">Преглед</a>
+          <a href="#menu-manager">Меню</a>
+          <a href="#events-manager">Събития</a>
+          <a href="#reservations-manager">Резервации</a>
+          <a href="#qr">QR меню</a>
+        </nav>
+        <a class="site-link" href="menu.html">Виж менюто</a>
+      </aside>
+
+      <section class="owner-content">
+        <header class="owner-topbar">
+          <div>
+            <p>Owner Portal</p>
+            <h1>Управление на бара</h1>
+          </div>
+          <div class="portal-status">
+            <span>Локален прототип</span>
+            <strong data-current-date></strong>
+          </div>
+        </header>
+
+        <section class="metric-grid" id="overview" aria-label="Бърз преглед">
+          <article>
+            <span>Меню</span>
+            <strong data-menu-count>0</strong>
+            <p>позиции в менюто</p>
+          </article>
+          <article>
+            <span>Събития</span>
+            <strong data-events-count>0</strong>
+            <p>записани в календара</p>
+          </article>
+          <article>
+            <span>Резервации</span>
+            <strong data-reservations-count>0</strong>
+            <p>в календара</p>
+          </article>
+        </section>
+
+        <section class="owner-card" id="menu-manager">
+          <div class="card-heading">
+            <div>
+              <p>Меню</p>
+              <h2>Пълна редакция на менюто</h2>
+            </div>
+            <div class="button-row">
+              <button type="button" data-add-category>+ Категория</button>
+              <button type="button" data-reset-menu>Върни началното меню</button>
+            </div>
+          </div>
+          <div class="menu-editor" data-menu-editor></div>
+          <p class="hint">Промените се виждат в `menu.html` и в меню секцията на главната страница след презареждане.</p>
+        </section>
+
+        <section class="owner-grid" id="events-manager">
+          <article class="owner-card">
+            <div class="card-heading">
+              <div>
+                <p>Събития</p>
+                <h2>Календар за главната страница</h2>
+              </div>
+            </div>
+            <div class="calendar-toolbar">
+              <button type="button" data-event-prev>Назад</button>
+              <strong data-event-month></strong>
+              <button type="button" data-event-next>Напред</button>
+            </div>
+            <div class="owner-calendar" data-events-calendar></div>
+          </article>
+
+          <article class="owner-card">
+            <div class="card-heading">
+              <div>
+                <p>Нов event</p>
+                <h2>Добави или редактирай</h2>
+              </div>
+            </div>
+            <form class="owner-form" data-event-form>
+              <input type="hidden" name="id" />
+              <label>Дата <input type="date" name="date" required /></label>
+              <label>Заглавие <input type="text" name="title" placeholder="Латино залез парти" required /></label>
+              <label>Кратък етикет <input type="text" name="label" placeholder="Латино" /></label>
+              <label>Описание <textarea name="description" rows="4"></textarea></label>
+              <button type="submit">Запази event</button>
+            </form>
+            <div class="compact-list" data-events-list></div>
+          </article>
+        </section>
+
+        <section class="owner-grid" id="reservations-manager">
+          <article class="owner-card">
+            <div class="card-heading">
+              <div>
+                <p>Резервации</p>
+                <h2>Календар с резервации</h2>
+              </div>
+            </div>
+            <div class="calendar-toolbar">
+              <button type="button" data-reservation-prev>Назад</button>
+              <strong data-reservation-month></strong>
+              <button type="button" data-reservation-next>Напред</button>
+            </div>
+            <div class="owner-calendar" data-reservations-calendar></div>
+          </article>
+
+          <article class="owner-card">
+            <div class="card-heading">
+              <div>
+                <p>Нова резервация</p>
+                <h2>Запази маса</h2>
+              </div>
+            </div>
+            <form class="owner-form" data-reservation-form>
+              <input type="hidden" name="id" />
+              <label>Дата <input type="date" name="date" required /></label>
+              <label>Час <input type="time" name="time" required /></label>
+              <label>Име <input type="text" name="name" required /></label>
+              <label>Гости <input type="number" name="guests" min="1" required /></label>
+              <label>Телефон <input type="text" name="phone" /></label>
+              <label>Бележка <textarea name="note" rows="3"></textarea></label>
+              <button type="submit">Запази резервация</button>
+            </form>
+            <div class="compact-list" data-reservations-list></div>
+          </article>
+        </section>
+
+        <section class="owner-card" id="qr">
+          <div class="card-heading">
+            <div>
+              <p>QR меню</p>
+              <h2>Линк за QR код</h2>
+            </div>
+          </div>
+          <div class="qr-layout">
+            <label>
+              Адрес на менюто
+              <input type="text" value="menu.html" data-menu-link />
+            </label>
+            <button type="button" data-copy-menu-link>Копирай линка</button>
+            <p class="hint" data-copy-status>Когато сайтът е онлайн, тук трябва да е пълният адрес към `menu.html`.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="data.js"></script>
+    <script src="owner.js"></script>
+  </body>
+</html>
