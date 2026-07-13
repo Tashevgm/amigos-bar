@@ -12,6 +12,7 @@ const menuCount = document.querySelector("[data-menu-count]");
 const eventsCount = document.querySelector("[data-events-count]");
 const reservationsCount = document.querySelector("[data-reservations-count]");
 const copyButton = document.querySelector("[data-copy-menu-link]");
+const downloadQrButton = document.querySelector("[data-download-qr]");
 const menuLinkInput = document.querySelector("[data-menu-link]");
 const copyStatus = document.querySelector("[data-copy-status]");
 const qrImage = document.querySelector("[data-qr-image]");
@@ -95,6 +96,22 @@ const renderQrPanel = () => {
         )
         .join("")
     : `<p class="hint">Още няма записани сканирания.</p>`;
+};
+
+const downloadQrCode = async () => {
+  const qrUrl = getQrUrl();
+  const imageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&margin=48&data=${encodeURIComponent(qrUrl)}`;
+  const response = await fetch(imageUrl);
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = blobUrl;
+  link.download = "amigos-menu-qr.png";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(blobUrl);
 };
 
 const renderMenuEditor = () => {
@@ -519,6 +536,16 @@ copyButton.addEventListener("click", async () => {
 });
 
 menuLinkInput.addEventListener("input", renderQrPanel);
+
+downloadQrButton.addEventListener("click", async () => {
+  try {
+    await downloadQrCode();
+    copyStatus.textContent = "QR кодът е свален.";
+  } catch (error) {
+    copyStatus.textContent = "Неуспешно сваляне. Опитайте отново.";
+    console.error(error);
+  }
+});
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
