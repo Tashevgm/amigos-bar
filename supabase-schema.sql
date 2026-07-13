@@ -46,6 +46,14 @@ create table if not exists public.reservations (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.qr_scans (
+  id uuid primary key default gen_random_uuid(),
+  scanned_at timestamptz not null default now(),
+  user_agent text,
+  referrer text,
+  created_at timestamptz not null default now()
+);
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -80,11 +88,13 @@ create index if not exists menu_categories_sort_idx on public.menu_categories(so
 create index if not exists menu_items_category_sort_idx on public.menu_items(category_id, sort_order, name);
 create index if not exists events_public_date_idx on public.events(event_date) where is_public = true;
 create index if not exists reservations_date_time_idx on public.reservations(reservation_date, reservation_time);
+create index if not exists qr_scans_scanned_at_idx on public.qr_scans(scanned_at desc);
 
 alter table public.menu_categories enable row level security;
 alter table public.menu_items enable row level security;
 alter table public.events enable row level security;
 alter table public.reservations enable row level security;
+alter table public.qr_scans enable row level security;
 
 drop policy if exists "Public can read menu categories" on public.menu_categories;
 create policy "Public can read menu categories"
@@ -109,6 +119,12 @@ create policy "Public can create reservations"
 on public.reservations for insert
 to anon, authenticated
 with check (status = 'pending');
+
+drop policy if exists "Public can create QR scans" on public.qr_scans;
+create policy "Public can create QR scans"
+on public.qr_scans for insert
+to anon, authenticated
+with check (true);
 
 drop policy if exists "Authenticated owner can manage menu categories" on public.menu_categories;
 create policy "Authenticated owner can manage menu categories"
@@ -137,3 +153,9 @@ on public.reservations for all
 to authenticated
 using (true)
 with check (true);
+
+drop policy if exists "Authenticated owner can read QR scans" on public.qr_scans;
+create policy "Authenticated owner can read QR scans"
+on public.qr_scans for select
+to authenticated
+using (true);

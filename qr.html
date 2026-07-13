@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="bg">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amigos Menu</title>
+    <meta name="robots" content="noindex" />
+    <style>
+      body {
+        align-items: center;
+        background: #f7f2e9;
+        color: #083f45;
+        display: grid;
+        font-family: Arial, sans-serif;
+        min-height: 100vh;
+        margin: 0;
+        place-items: center;
+      }
+
+      p {
+        font-weight: 800;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Отваряме менюто...</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data.js"></script>
+    <script>
+      const openMenu = () => {
+        window.location.replace("menu.html");
+      };
+
+      const trackScan = async () => {
+        try {
+          await window.AmigosDb.logQrScan({
+            userAgent: navigator.userAgent,
+            referrer: document.referrer,
+          });
+        } catch (error) {
+          console.error(error);
+        } finally {
+          openMenu();
+        }
+      };
+
+      trackScan();
+    </script>
+  </body>
+</html>

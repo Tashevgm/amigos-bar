@@ -14,6 +14,9 @@ const reservationsCount = document.querySelector("[data-reservations-count]");
 const copyButton = document.querySelector("[data-copy-menu-link]");
 const menuLinkInput = document.querySelector("[data-menu-link]");
 const copyStatus = document.querySelector("[data-copy-status]");
+const qrImage = document.querySelector("[data-qr-image]");
+const qrStats = document.querySelector("[data-qr-stats]");
+const qrToday = document.querySelector("[data-qr-today]");
 const authPanel = document.querySelector("[data-auth-panel]");
 const loginForm = document.querySelector("[data-login-form]");
 const logoutButton = document.querySelector("[data-logout]");
@@ -27,6 +30,7 @@ const monthState = {
 let menuState = [];
 let eventsState = [];
 let reservationsState = [];
+let qrStatsState = [];
 let menuSaveTimer;
 
 const typeLabels = {
@@ -64,6 +68,33 @@ const renderStats = () => {
   menuCount.textContent = menuState.reduce((total, category) => total + category.items.length, 0);
   eventsCount.textContent = eventsState.length;
   reservationsCount.textContent = reservationsState.length;
+  qrToday.textContent = qrStatsState[0]?.count || 0;
+};
+
+const getQrUrl = () => {
+  const value = menuLinkInput.value.trim();
+  return value || `${window.location.origin}/qr.html`;
+};
+
+const renderQrPanel = () => {
+  const qrUrl = getQrUrl();
+  const maxCount = Math.max(1, ...qrStatsState.map((item) => item.count));
+
+  qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=420x420&margin=18&data=${encodeURIComponent(qrUrl)}`;
+
+  qrStats.innerHTML = qrStatsState.length
+    ? qrStatsState
+        .map(
+          (item) => `
+            <div class="qr-stat-row">
+              <span>${item.date.slice(5)}</span>
+              <div class="qr-stat-bar"><i style="width: ${(item.count / maxCount) * 100}%"></i></div>
+              <strong>${item.count}</strong>
+            </div>
+          `,
+        )
+        .join("")
+    : `<p class="hint">Още няма записани сканирания.</p>`;
 };
 
 const renderMenuEditor = () => {
@@ -200,6 +231,7 @@ const renderAll = () => {
   renderMenuEditor();
   renderEvents();
   renderReservations();
+  renderQrPanel();
 };
 
 const setAuthUi = async () => {
@@ -252,6 +284,7 @@ const loadOwnerData = async () => {
   menuState = await store.getMenu();
   eventsState = await store.getEvents();
   reservationsState = await store.getReservations();
+  qrStatsState = await store.getQrDailyStats(14);
   renderAll();
 };
 
@@ -484,6 +517,8 @@ copyButton.addEventListener("click", async () => {
     copyStatus.textContent = "Маркирай и копирай линка ръчно.";
   }
 });
+
+menuLinkInput.addEventListener("input", renderQrPanel);
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();

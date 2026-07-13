@@ -74,6 +74,11 @@
             <strong data-reservations-count>0</strong>
             <p>в календара</p>
           </article>
+          <article>
+            <span>QR днес</span>
+            <strong data-qr-today>0</strong>
+            <p>сканирания</p>
+          </article>
         </section>
 
         <section class="owner-card" id="menu-manager">
@@ -167,16 +172,23 @@
           <div class="card-heading">
             <div>
               <p>QR меню</p>
-              <h2>Линк за QR код</h2>
+              <h2>QR код и статистика</h2>
             </div>
           </div>
           <div class="qr-layout">
             <label>
-              Адрес на менюто
-              <input type="text" value="menu.html" data-menu-link />
+              Адрес за QR кода
+              <input type="text" value="https://bar-amigos.com/qr.html" data-menu-link />
             </label>
             <button type="button" data-copy-menu-link>Копирай линка</button>
-            <p class="hint" data-copy-status>Когато сайтът е онлайн, тук трябва да е пълният адрес към `menu.html`.</p>
+            <p class="hint" data-copy-status>QR кодът води към tracking страница и после отваря менюто.</p>
+          </div>
+          <div class="qr-dashboard">
+            <img data-qr-image alt="QR код за менюто" />
+            <div>
+              <h3>Сканирания по дни</h3>
+              <div class="qr-stats" data-qr-stats></div>
+            </div>
           </div>
         </section>
       </section>

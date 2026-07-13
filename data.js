@@ -446,4 +446,48 @@ window.AmigosDb = {
     const { error } = await supabaseClient.from("reservations").delete().eq("id", id);
     if (error) throw error;
   },
+
+  async logQrScan(scan = {}) {
+    if (!supabaseClient) return;
+
+    const { error } = await supabaseClient.from("qr_scans").insert({
+      user_agent: scan.userAgent || null,
+      referrer: scan.referrer || null,
+    });
+
+    if (error) throw error;
+  },
+
+  async getQrDailyStats(days = 14) {
+    if (!supabaseClient) return [];
+
+    const start = new Date();
+    start.setDate(start.getDate() - days + 1);
+    start.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabaseClient
+      .from("qr_scans")
+      .select("scanned_at")
+      .gte("scanned_at", start.toISOString())
+      .order("scanned_at", { ascending: false });
+
+    if (error || !data) return [];
+
+    const counts = data.reduce((result, row) => {
+      const key = new Date(row.scanned_at).toISOString().slice(0, 10);
+      result[key] = (result[key] || 0) + 1;
+      return result;
+    }, {});
+
+    return Array.from({ length: days }, (_, index) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index);
+      const key = date.toISOString().slice(0, 10);
+
+      return {
+        date: key,
+        count: counts[key] || 0,
+      };
+    }).reverse();
+  },
 };
