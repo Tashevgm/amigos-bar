@@ -77,11 +77,34 @@ const getQrUrl = () => {
   return value || `${window.location.origin}/qr.html`;
 };
 
-const renderQrPanel = () => {
+const getExternalQrUrl = (size = 420, margin = 18) =>
+  `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=${margin}&data=${encodeURIComponent(getQrUrl())}`;
+
+const createQrDataUrl = async (width = 1200, margin = 4) => {
+  if (!window.QRCode?.toDataURL) {
+    return getExternalQrUrl(width, margin);
+  }
+
+  return window.QRCode.toDataURL(getQrUrl(), {
+    width,
+    margin,
+    errorCorrectionLevel: "M",
+    color: {
+      dark: "#083f45",
+      light: "#ffffff",
+    },
+  });
+};
+
+const renderQrPanel = async () => {
   const qrUrl = getQrUrl();
   const maxCount = Math.max(1, ...qrStatsState.map((item) => item.count));
 
-  qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=420x420&margin=18&data=${encodeURIComponent(qrUrl)}`;
+  try {
+    qrImage.src = await createQrDataUrl(420, 3);
+  } catch {
+    qrImage.src = getExternalQrUrl(420, 18);
+  }
 
   qrStats.innerHTML = qrStatsState.length
     ? qrStatsState
@@ -99,19 +122,14 @@ const renderQrPanel = () => {
 };
 
 const downloadQrCode = async () => {
-  const qrUrl = getQrUrl();
-  const imageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&margin=48&data=${encodeURIComponent(qrUrl)}`;
-  const response = await fetch(imageUrl);
-  const blob = await response.blob();
-  const blobUrl = URL.createObjectURL(blob);
+  const imageUrl = await createQrDataUrl(1200, 4);
   const link = document.createElement("a");
 
-  link.href = blobUrl;
+  link.href = imageUrl;
   link.download = "amigos-menu-qr.png";
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(blobUrl);
 };
 
 const renderMenuEditor = () => {
