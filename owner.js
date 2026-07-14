@@ -2,6 +2,8 @@ const localStore = window.AmigosStore;
 const store = window.AmigosDb;
 const currentDate = document.querySelector("[data-current-date]");
 const menuEditor = document.querySelector("[data-menu-editor]");
+const menuSaveButton = document.querySelector("[data-save-menu]");
+const menuSaveStatus = document.querySelector("[data-menu-save-status]");
 const eventForm = document.querySelector("[data-event-form]");
 const reservationForm = document.querySelector("[data-reservation-form]");
 const eventsCalendar = document.querySelector("[data-events-calendar]");
@@ -282,16 +284,57 @@ const setAuthUi = async () => {
     : "Влез с потребител от Supabase Auth, за да редактираш базата.";
 };
 
+const setMenuSaveStatus = (message, state = "") => {
+  menuSaveStatus.textContent = message;
+  menuSaveStatus.dataset.state = state;
+};
+
+const persistMenu = async () => {
+  window.clearTimeout(menuSaveTimer);
+  localStore.saveMenu(menuState);
+
+  if (menuSaveButton) {
+    menuSaveButton.disabled = true;
+    menuSaveButton.textContent = "Записване...";
+  }
+
+  setMenuSaveStatus("Записване на менюто...", "pending");
+
+  try {
+    if (store.client) {
+      const { data } = await store.client.auth.getSession();
+      if (!data.session) {
+        throw new Error("Owner login required before saving menu changes.");
+      }
+    }
+
+    await store.saveMenu(menuState);
+
+    const message = store.client
+      ? "Менюто е записано в Supabase. Презареди menu.html, за да видиш промените."
+      : "Менюто е записано локално в този браузър.";
+
+    setMenuSaveStatus(message, "success");
+    authStatus.textContent = store.client ? "Менюто е записано в Supabase." : message;
+    return true;
+  } catch (error) {
+    const message = "Менюто не е записано онлайн. Влез в owner portal и натисни \"Запази менюто\" отново.";
+    setMenuSaveStatus(message, "error");
+    authStatus.textContent = message;
+    console.error(error);
+    return false;
+  } finally {
+    if (menuSaveButton) {
+      menuSaveButton.disabled = false;
+      menuSaveButton.textContent = "Запази менюто";
+    }
+  }
+};
+
 const saveMenuSoon = () => {
   window.clearTimeout(menuSaveTimer);
-  menuSaveTimer = window.setTimeout(async () => {
-    try {
-      await store.saveMenu(menuState);
-      authStatus.textContent = "Менюто е записано в Supabase.";
-    } catch (error) {
-      authStatus.textContent = "Менюто не е записано. Провери дали си влязъл в портала.";
-      console.error(error);
-    }
+  menuSaveTimer = window.setTimeout(() => {
+    persistMenu();
   }, 900);
 };
 
@@ -346,6 +389,7 @@ const handleMenuEditorChange = (event) => {
   }
 
   localStore.saveMenu(menu);
+  setMenuSaveStatus("Има промени по менюто. Записват се автоматично, но можеш да натиснеш \"Запази менюто\".", "pending");
   saveMenuSoon();
   renderStats();
 };
@@ -358,6 +402,9 @@ menuEditor.addEventListener("click", async (event) => {
   const addItem = event.target.dataset.addItem;
   const deleteItem = event.target.dataset.deleteItem;
   const deleteCategory = event.target.dataset.deleteCategory;
+  const hasMenuAction = addItem !== undefined || Boolean(deleteItem) || deleteCategory !== undefined;
+
+  if (!hasMenuAction) return;
 
   if (addItem !== undefined) {
     menu[Number(addItem)].items.push({ name: "Нова позиция", size: "300г", price: "0.00" });
@@ -373,14 +420,13 @@ menuEditor.addEventListener("click", async (event) => {
   }
 
   localStore.saveMenu(menu);
-  try {
-    await store.saveMenu(menu);
-  } catch (error) {
-    authStatus.textContent = "Промяната не е записана. Провери дали си влязъл.";
-    console.error(error);
-  }
+  await persistMenu();
   renderMenuEditor();
   renderStats();
+});
+
+menuSaveButton.addEventListener("click", () => {
+  persistMenu();
 });
 
 document.querySelector("[data-add-category]").addEventListener("click", async () => {
@@ -393,24 +439,14 @@ document.querySelector("[data-add-category]").addEventListener("click", async ()
     items: [{ name: "Нова позиция", size: "300г", price: "0.00" }],
   });
   localStore.saveMenu(menu);
-  try {
-    await store.saveMenu(menu);
-  } catch (error) {
-    authStatus.textContent = "Категорията не е записана. Провери дали си влязъл.";
-    console.error(error);
-  }
+  await persistMenu();
   renderAll();
 });
 
 document.querySelector("[data-reset-menu]").addEventListener("click", async () => {
   localStore.resetMenu();
   menuState = localStore.getMenu();
-  try {
-    await store.saveMenu(menuState);
-  } catch (error) {
-    authStatus.textContent = "Менюто не е записано. Провери дали си влязъл.";
-    console.error(error);
-  }
+  await persistMenu();
   renderAll();
 });
 
