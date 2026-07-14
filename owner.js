@@ -67,6 +67,37 @@ const formatMonth = (date) =>
 
 const getDateKey = (year, month, day) => `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
+const normalizeMenu = (menu = []) => {
+  const categoryMap = new Map();
+
+  menu.forEach((category) => {
+    const categoryKey = [category.title, category.type, category.color].map((value) => String(value || "").trim().toLowerCase()).join("|");
+    const existingCategory = categoryMap.get(categoryKey);
+    const targetCategory =
+      existingCategory ||
+      {
+        ...category,
+        items: [],
+      };
+    const itemKeys = new Set(targetCategory.items.map((item) => [item.name, item.size, item.price].map((value) => String(value || "").trim().toLowerCase()).join("|")));
+
+    (category.items || []).forEach((item) => {
+      const itemKey = [item.name, item.size, item.price].map((value) => String(value || "").trim().toLowerCase()).join("|");
+
+      if (!itemKeys.has(itemKey)) {
+        targetCategory.items.push({ ...item });
+        itemKeys.add(itemKey);
+      }
+    });
+
+    if (!existingCategory) {
+      categoryMap.set(categoryKey, targetCategory);
+    }
+  });
+
+  return [...categoryMap.values()];
+};
+
 const renderStats = () => {
   menuCount.textContent = menuState.reduce((total, category) => total + category.items.length, 0);
   eventsCount.textContent = eventsState.length;
@@ -291,6 +322,7 @@ const setMenuSaveStatus = (message, state = "") => {
 
 const persistMenu = async () => {
   window.clearTimeout(menuSaveTimer);
+  menuState = normalizeMenu(menuState);
   localStore.saveMenu(menuState);
 
   if (menuSaveButton) {
@@ -331,13 +363,6 @@ const persistMenu = async () => {
   }
 };
 
-const saveMenuSoon = () => {
-  window.clearTimeout(menuSaveTimer);
-  menuSaveTimer = window.setTimeout(() => {
-    persistMenu();
-  }, 900);
-};
-
 const shiftMonth = (key, amount) => {
   monthState[key] = new Date(monthState[key].getFullYear(), monthState[key].getMonth() + amount, 1);
   key === "events" ? renderEvents() : renderReservations();
@@ -359,7 +384,8 @@ currentDate.textContent = new Intl.DateTimeFormat("bg-BG", {
 
 const loadOwnerData = async () => {
   await setAuthUi();
-  menuState = await store.getMenu();
+  menuState = normalizeMenu(await store.getMenu());
+  localStore.saveMenu(menuState);
   eventsState = await store.getEvents();
   reservationsState = await store.getReservations();
   qrStatsState = await store.getQrDailyStats(14);
@@ -389,8 +415,7 @@ const handleMenuEditorChange = (event) => {
   }
 
   localStore.saveMenu(menu);
-  setMenuSaveStatus("Има промени по менюто. Записват се автоматично, но можеш да натиснеш \"Запази менюто\".", "pending");
-  saveMenuSoon();
+  setMenuSaveStatus("Има незапазени промени. Натисни \"Запази менюто\", за да ги публикуваш.", "pending");
   renderStats();
 };
 
@@ -420,7 +445,7 @@ menuEditor.addEventListener("click", async (event) => {
   }
 
   localStore.saveMenu(menu);
-  await persistMenu();
+  setMenuSaveStatus("Има незапазени промени. Натисни \"Запази менюто\", за да ги публикуваш.", "pending");
   renderMenuEditor();
   renderStats();
 });
@@ -439,14 +464,14 @@ document.querySelector("[data-add-category]").addEventListener("click", async ()
     items: [{ name: "Нова позиция", size: "300г", price: "0.00" }],
   });
   localStore.saveMenu(menu);
-  await persistMenu();
+  setMenuSaveStatus("Има незапазени промени. Натисни \"Запази менюто\", за да ги публикуваш.", "pending");
   renderAll();
 });
 
 document.querySelector("[data-reset-menu]").addEventListener("click", async () => {
   localStore.resetMenu();
   menuState = localStore.getMenu();
-  await persistMenu();
+  setMenuSaveStatus("Началното меню е заредено като чернова. Натисни \"Запази менюто\", за да го публикуваш.", "pending");
   renderAll();
 });
 
